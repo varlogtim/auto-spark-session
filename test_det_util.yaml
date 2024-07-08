@@ -1,0 +1,10 @@
+resources:
+  slots_per_trial: 0
+searcher:
+  name: single
+  metric: x
+  max_length: 1
+max_restarts: 0
+entrypoint: python3 test_det_util.py
+workspace: Workspace1-SearchRec
+project: test-search-rec
