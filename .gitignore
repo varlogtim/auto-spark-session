@@ -2,6 +2,27 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+
+# Distribution / packaging
+.Python
+env/
+build/
+build-examples/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+dist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-wheel-metadata/
+
 # mypy
 .mypy_cache/
 .dmypy.json
