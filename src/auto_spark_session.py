@@ -4,11 +4,11 @@ findspark.init()  # reportedly finds the correct spark version
 import os
 import json
 import pyspark
+import determined as det
 
 from typing import Optional, Any, Dict, List, Tuple, Union
 
 from determined.common import api
-from determined.common.api import bindings
 from determined.experimental import client
 
 from pyspark import SparkConf, _NoValue
@@ -33,18 +33,21 @@ def get_current_workspace() -> str:
     session = D._session
 
     def get_workspace_name_by_id(wid: int) -> str:
-        resp = bindings.get_GetWorkspace(session, id=wid)
+        resp = api.bindings.get_GetWorkspace(session, id=wid)
         return resp.workspace.name
 
-    task_id = os.environ["DET_TASK_ID"]
-    task_type = os.environ["DET_TASK_TYPE"]
+    task_type = os.environ.get("DET_TASK_TYPE")
+    if not task_type:
+        raise RuntimeError("Could not determine the task type.")
+
     if task_type.lower() in [t.name for t in api.NTSC_Kind]:
+        task_id = os.environ.get("DET_TASK_ID")
         task_kind = getattr(api.NTSC_Kind, task_type.lower())
         deets = api.get_ntsc_details(session, task_kind, task_id)
         return get_workspace_name_by_id(deets.workspaceId)
     else:
         exp_id = os.environ["DET_EXPERIMENT_ID"]
-        resp = bindings.get_GetExperiment(session, experimentId=int(exp_id))
+        resp = api.bindings.get_GetExperiment(session, experimentId=int(exp_id))
         return resp.experiment.workspaceName
 
 
@@ -130,6 +133,11 @@ def get_spark_session(
     storage_account_name: str,
     conf: Optional[SparkConf] = None
 ) -> "SparkSession":
+    # TODO: wrap all calls and report this must be run on a 
+    # det.get_cluster_info() is None, error
+    if det.get_cluster_info() is None:
+        raise RuntimeError("get_spark_session() must be run on a Determined Cluster")
+
     service_principal = ServicePrincipal.from_workspace()
 
     if conf is None:
@@ -157,9 +165,9 @@ def get_spark_session(
         f"fs.azure.account.oauth2.client.secret.{storage_account_name}.dfs.core.windows.net",
             service_principal.client_secret_value)
     conf.set(
-        f"fs.azure.account.oauth2.client.endpoint.{storage_account_name}.dfs.core.windows.net":
+        f"fs.azure.account.oauth2.client.endpoint.{storage_account_name}.dfs.core.windows.net",
         f"https://login.microsoftonline.com/{service_principal.directory_id}/oauth2/token",
-    }
+    )
     # Build our SparkSession
     spark_session = SparkSession.builder.config(conf=conf).getOrCreate()
 
