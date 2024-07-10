@@ -1,3 +1,7 @@
+# Tests
+tests/exp_context/*.whl
+
+# PyCache
 __pycache__/
 *.py[cod]
 *$py.class
