@@ -151,8 +151,6 @@ def get_spark_session(
     # do is to intercept any calls to this RuntimeConfig, mask any containing secrets, and
     # passing any other calls to the API without modification.
 
-    # XXX Nolan, why is this version hard coded?
-    conf.set("spark.jars.packages", "org.apache.hadoop:hadoop-azure:3.4.0")
     conf.set(
         f"fs.azure.account.auth.type.{storage_account_name}.dfs.core.windows.net", "OAuth")
     conf.set(f"fs.azure.account.oauth.provider.type.{storage_account_name}.dfs.core.windows.net",
