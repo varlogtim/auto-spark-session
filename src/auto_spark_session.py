@@ -128,6 +128,14 @@ class ServicePrincipal:
         return cls.from_file(service_principal_key)
 
 
+def get_storage_path(
+    storage_account_name: str,
+    container_name: str,
+    storage_uri: str
+) -> str:
+    return (
+        f"abfss://{container_name}@{storage_account_name}.dfs.core.windows.net/{storage_uri.lstrip('/')}"
+    )
 
 def get_spark_session(
     storage_account_name: str,

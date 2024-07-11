@@ -1,0 +1,13 @@
+name: Test to read data from Azure via Spark
+workspace: Workspace1-SearchRec
+project: TestProject
+data:
+  storage_account: retaildata0
+  container_name: purchases
+  storage_uri: /widgets/quarterly/
+searcher:
+  name: single
+  metric: x
+  max_length: 1
+entrypoint: python write_data.py
+max_restarts: 0
