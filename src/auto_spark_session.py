@@ -168,6 +168,13 @@ def build_storage_path(
     container_name: str,
     storage_uri: str
 ) -> str:
+    """build_storage_path() returns a string representing the full Azure storage path.
+
+    Args:
+        storage_account_name (string): The Azure Storage Account name.
+        container_name (string): The name of the Container in the Storage Account.
+        storage_uri (string): The path inside the Container you would like to access.
+    """
     return (
         f"abfss://{container_name}@{storage_account_name}.dfs.core.windows.net/{storage_uri.lstrip('/')}"
     )
