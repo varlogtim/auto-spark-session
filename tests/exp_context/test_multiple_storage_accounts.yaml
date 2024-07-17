@@ -1,0 +1,17 @@
+name: Test to read data from Azure via Spark
+workspace: Workspace1-SearchRec
+project: TestProject
+data:
+  storage_accounts:
+    - storage_account_name: retaildata0
+      container_name: purchases
+      uri: /test/
+    - storage_account_name: patientdata0
+      container_name: personal-information
+      uri: /addresses/employees/
+searcher:
+  name: single
+  metric: x
+  max_length: 1
+entrypoint: python ./test_multiple_storage_accounts.py
+max_restarts: 0
