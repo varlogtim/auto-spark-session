@@ -1,7 +1,5 @@
 import determined as det
-
-from auto_spark_session import get_spark_session
-from urllib.parse import urljoin
+import auto_spark_session
 
 
 info = det.get_cluster_info()
@@ -10,11 +8,11 @@ storage_account =  info.user_data.get("storage_account")
 container_name = info.user_data.get("container_name")
 storage_uri = info.user_data.get("storage_uri").lstrip("/")
 
-storage_path = f"abfss://{container_name}@{storage_account}.dfs.core.windows.net/{storage_uri}"
+storage_path = auto_spark_session.build_storage_path(storage_account, container_name, storage_uri)
 print(f"Using storage_path: {storage_path}")
 
 
-spark_session = get_spark_session(storage_account)
+spark_session = auto_spark_session.from_azure_storage_account(storage_account)
 sum_of_squares = 0
 for ii, row in enumerate(spark_session.read.parquet(storage_path).toLocalIterator()):
     sum_of_squares += int(row["squared_value"])

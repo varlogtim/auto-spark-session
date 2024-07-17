@@ -29,6 +29,7 @@ from py4j.java_gateway import JavaObject
 
 
 def get_current_workspace() -> str:
+    """get_current_workspace() returns the name of the workspace the current task is running in."""
     D = client.Determined()
     session = D._session
 
@@ -71,6 +72,33 @@ class WrapRuntimeConfig(RuntimeConfig):
 
 
 class ServicePrincipal:
+    """Represents an Azure Service Principal Client Secret.
+
+    Used to load Service Principal data from a file.
+
+    Attributes:
+    -----------
+        _basedir_path : (class attribute)
+            The path to the base directory containing the Service Principal files.
+        name : str
+            The name of the Service Principal, only used for reference.
+        client_secret_id : str
+            The UUID of the Client Secret associated with the Service Principal. Found here:
+            MS Entra admin center > Applications > App Registrations > [ServicePrincipal] > 
+            Certificates & Secrets > Client Secrets > Secret ID
+        client_secret_value : str
+            The Value of the Client Secret associated with the Service Principal. Found here:
+            MS Entra admin center > Applications > App Registrations > [ServicePrincipal] > 
+            Certificates & Secrets > Client Secrets > Value
+        application_id : str
+            The UUID which identifies the Application of the Service Principal. Found here:
+            MS Entra admin center > Applications > App Registrations > Overview: Application (client) ID
+        directory_id : str
+            The UUID which identifies the Directory containing the Service Principal. Found here:
+            MS Entra admin center > Applications > App Registrations > Overview: Directory (tenent) ID
+        expiries : str
+            The date respresenting the date the Client Secret expires. Only used for reference.
+    """
     _basedir_path = "/azure/service_principals/"
 
     def __init__(
@@ -91,6 +119,13 @@ class ServicePrincipal:
 
     @classmethod
     def from_file(cls, key: str) -> "ServicePrincipal":
+        """from_file() returns a ServicePrincipal based on the provided file key.
+
+        Args:
+            key (string): The key used to identify the Service Principal file.
+                The expected path is: `f{_basedir_path}/{key}.service-principal.json`
+
+        """
         file_path = f"{key}.service-principal.json"
         full_path = os.path.join(cls._basedir_path, file_path)
 
@@ -128,8 +163,7 @@ class ServicePrincipal:
         return cls.from_file(service_principal_key)
 
 
-# TODO: rename to "build_storage_path"
-def get_storage_path(
+def build_storage_path(
     storage_account_name: str,
     container_name: str,
     storage_uri: str
@@ -138,12 +172,22 @@ def get_storage_path(
         f"abfss://{container_name}@{storage_account_name}.dfs.core.windows.net/{storage_uri.lstrip('/')}"
     )
 
-# TODO: rename to "from_azure_storage_account"
-# XXX what if it is AutoSparkSession.from_storage_account()
-def get_spark_session(
+def from_azure_storage_account(
     storage_accounts: Union[str, List[str]],
     conf: Optional[SparkConf] = None
 ) -> "SparkSession":
+    """
+    ``from_azure_storage_account()`` will configure Service Principal authentication based on the
+    Determined AI Workspace of the running task and return an active SparkSession.
+
+    Args:
+        storage_accounts (string, list): The Azure Storage Account(s) name.
+        conf (pyspark.SparkConf, optional): The base SparkConf to use.
+            If this is not specified, a new empty SparkConf will be created. This is normally used
+            for any configuration options that are required before the session initialization.
+    Returns:
+        The configured :class: `pyspark.sql.SparkSession`.
+    """
     if not isinstance(storage_accounts, str) and not isinstance(storage_accounts, list):
         raise ValueError("storage_accounts must be either a str or list")
 
@@ -152,20 +196,13 @@ def get_spark_session(
 
     # TODO: inspect for function name
     if det.get_cluster_info() is None:
-        raise RuntimeError("get_spark_session() must be run on a Determined Cluster")
+        raise RuntimeError("must be run on a Determined Cluster")
 
     service_principal = ServicePrincipal.from_workspace()
 
     if conf is None:
         conf = SparkConf()
 
-    # When we create a SparkConf, that is the Python side representation of the config.
-    # When we call SparkSession.builder() with the SparkConf, it creates the JVM and
-    # all the relevant JavaObjects containing the Scala side representation of the config.
-    # Attached to the SparkSession is a RuntimeConfig object which acts as the API for
-    # for Python to get/set config options with the JavaObject during runtime. So, what we
-    # do is to intercept any calls to this RuntimeConfig, mask any containing secrets, and
-    # passing any other calls to the API without modification.
     def set_conf_storage_account(storage_account_name: str) -> None:
         conf.set(
             f"fs.azure.account.auth.type.{storage_account_name}.dfs.core.windows.net", "OAuth")
@@ -185,6 +222,14 @@ def get_spark_session(
 
     for storage_account_name in storage_accounts:
         set_conf_storage_account(storage_account_name)
+
+    # When we create a SparkConf, that is the Python side representation of the config.
+    # When we call SparkSession.builder() with the SparkConf, it creates the JVM and
+    # all the relevant JavaObjects containing the Scala side representation of the config.
+    # Attached to the SparkSession is a RuntimeConfig (.conf) object which acts as the API for
+    # for Python to get/set config options with the JavaObject during runtime. So, what we
+    # do is to intercept any calls to this RuntimeConfig, mask any containing secrets, and
+    # passing any other calls to the API without modification.
 
     # Build our SparkSession
     spark_session = SparkSession.builder.config(conf=conf).getOrCreate()
