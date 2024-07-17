@@ -1,7 +1,7 @@
 import determined as det
 import logging
 
-from auto_spark_session import get_spark_session
+import auto_spark_session
 from datetime import datetime
 from pyspark.sql.functions import col
 from urllib.parse import urljoin
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     storage_path = f"abfss://{container_name}@{storage_account}.dfs.core.windows.net/{storage_uri}"
     print(f"Using storage_path: {storage_path}")
 
-    spark_session = get_spark_session(storage_account)
+    spark_session = auto_spark_session.from_azure_storage_account(storage_account)
 
     with det.core.init() as core_context:
         main(core_context, spark_session, storage_path)

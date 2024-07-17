@@ -1,6 +1,6 @@
 import determined as det
+import auto_spark_session
 
-from auto_spark_session import get_spark_session, get_storage_path
 from urllib.parse import urljoin
 
 
@@ -10,11 +10,11 @@ storage_accounts =  info.user_data.get("storage_accounts")
 
 storage_account_names = [sa['storage_account_name'] for sa in storage_accounts]
 storage_paths = [
-    get_storage_path(sa['storage_account_name'], sa['container_name'], sa['uri'].lstrip("/"))
+    auto_spark_session.build_storage_path(sa['storage_account_name'], sa['container_name'], sa['uri'].lstrip("/"))
     for sa in storage_accounts
 ]
 
-spark_session = get_spark_session(storage_account_names)
+spark_session = auto_spark_session.from_azure_storage_account(storage_account_names)
 
 
 spark_readers = [spark_session.read.parquet(sp) for sp in storage_paths]
