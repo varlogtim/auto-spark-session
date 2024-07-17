@@ -14,7 +14,7 @@ storage_paths = [
     for sa in storage_accounts
 ]
 
-spark_session = auto_spark_session.from_azure_storage_account(storage_account_names)
+spark_session = auto_spark_session.get_session(storage_account_names)
 
 
 spark_readers = [spark_session.read.parquet(sp) for sp in storage_paths]

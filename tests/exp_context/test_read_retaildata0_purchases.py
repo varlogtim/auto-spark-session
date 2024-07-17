@@ -12,7 +12,7 @@ storage_path = auto_spark_session.build_storage_path(storage_account, container_
 print(f"Using storage_path: {storage_path}")
 
 
-spark_session = auto_spark_session.from_azure_storage_account(storage_account)
+spark_session = auto_spark_session.get_session(storage_account)
 sum_of_squares = 0
 for ii, row in enumerate(spark_session.read.parquet(storage_path).toLocalIterator()):
     sum_of_squares += int(row["squared_value"])

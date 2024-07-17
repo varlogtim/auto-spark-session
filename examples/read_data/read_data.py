@@ -36,7 +36,7 @@ if __name__ == "__main__":
     storage_path = f"abfss://{container_name}@{storage_account}.dfs.core.windows.net/{storage_uri}"
     print(f"Using storage_path: {storage_path}")
 
-    spark_session = auto_spark_session.from_azure_storage_account(storage_account)
+    spark_session = auto_spark_session.get_session(storage_account)
 
     with det.core.init() as core_context:
         main(core_context, spark_session, storage_path)
