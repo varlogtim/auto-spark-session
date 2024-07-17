@@ -179,12 +179,12 @@ def build_storage_path(
         f"abfss://{container_name}@{storage_account_name}.dfs.core.windows.net/{storage_uri.lstrip('/')}"
     )
 
-def from_azure_storage_account(
+def get_session(
     storage_accounts: Union[str, List[str]],
     conf: Optional[SparkConf] = None
 ) -> "SparkSession":
     """
-    ``from_azure_storage_account()`` will configure Service Principal authentication based on the
+    ``get_session()`` will configure Service Principal authentication based on the
     Determined AI Workspace of the running task and return an active SparkSession.
 
     Args:
