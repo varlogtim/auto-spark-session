@@ -128,6 +128,7 @@ class ServicePrincipal:
         return cls.from_file(service_principal_key)
 
 
+# TODO: rename to "build_storage_path"
 def get_storage_path(
     storage_account_name: str,
     container_name: str,
@@ -137,12 +138,19 @@ def get_storage_path(
         f"abfss://{container_name}@{storage_account_name}.dfs.core.windows.net/{storage_uri.lstrip('/')}"
     )
 
+# TODO: rename to "from_azure_storage_account"
+# XXX what if it is AutoSparkSession.from_storage_account()
 def get_spark_session(
-    storage_account_name: str,
+    storage_accounts: Union[str, List[str]],
     conf: Optional[SparkConf] = None
 ) -> "SparkSession":
-    # TODO: wrap all calls and report this must be run on a 
-    # det.get_cluster_info() is None, error
+    if not isinstance(storage_accounts, str) and not isinstance(storage_accounts, list):
+        raise ValueError("storage_accounts must be either a str or list")
+
+    if isinstance(storage_accounts, str):
+        storage_accounts = [storage_accounts]
+
+    # TODO: inspect for function name
     if det.get_cluster_info() is None:
         raise RuntimeError("get_spark_session() must be run on a Determined Cluster")
 
@@ -158,22 +166,26 @@ def get_spark_session(
     # for Python to get/set config options with the JavaObject during runtime. So, what we
     # do is to intercept any calls to this RuntimeConfig, mask any containing secrets, and
     # passing any other calls to the API without modification.
+    def set_conf_storage_account(storage_account_name: str) -> None:
+        conf.set(
+            f"fs.azure.account.auth.type.{storage_account_name}.dfs.core.windows.net", "OAuth")
+        conf.set(f"fs.azure.account.oauth.provider.type.{storage_account_name}.dfs.core.windows.net",
+                "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+        conf.set(
+            f"fs.azure.account.oauth2.client.id.{storage_account_name}.dfs.core.windows.net",
+            service_principal.application_id
+        )
+        conf.set(
+            f"fs.azure.account.oauth2.client.secret.{storage_account_name}.dfs.core.windows.net",
+                service_principal.client_secret_value)
+        conf.set(
+            f"fs.azure.account.oauth2.client.endpoint.{storage_account_name}.dfs.core.windows.net",
+            f"https://login.microsoftonline.com/{service_principal.directory_id}/oauth2/token",
+        )
 
-    conf.set(
-        f"fs.azure.account.auth.type.{storage_account_name}.dfs.core.windows.net", "OAuth")
-    conf.set(f"fs.azure.account.oauth.provider.type.{storage_account_name}.dfs.core.windows.net",
-            "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
-    conf.set(
-        f"fs.azure.account.oauth2.client.id.{storage_account_name}.dfs.core.windows.net",
-        service_principal.application_id
-    )
-    conf.set(
-        f"fs.azure.account.oauth2.client.secret.{storage_account_name}.dfs.core.windows.net",
-            service_principal.client_secret_value)
-    conf.set(
-        f"fs.azure.account.oauth2.client.endpoint.{storage_account_name}.dfs.core.windows.net",
-        f"https://login.microsoftonline.com/{service_principal.directory_id}/oauth2/token",
-    )
+    for storage_account_name in storage_accounts:
+        set_conf_storage_account(storage_account_name)
+
     # Build our SparkSession
     spark_session = SparkSession.builder.config(conf=conf).getOrCreate()
 
