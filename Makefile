@@ -9,7 +9,6 @@ build:
 	python -m build
 
 
-# TODO: detect the version automatically
 .PHONY: install
 install:
 	pip install --force-reinstall dist/$(FULLNAME)-py3-none-any.whl
