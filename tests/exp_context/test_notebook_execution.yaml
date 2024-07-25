@@ -1,0 +1,31 @@
+name: Test papermill
+workspace: test
+project: test
+environment:
+  image: nolanc/pyspark-training:spark3.5-rapids1.12-azure3.4-auto-spark-auto-spark0.0.1
+bind_mounts:
+  - container_path: /azure/service_principals/
+    host_path: /tmp/service_principals
+    propagation: rprivate
+    read_only: true
+data:
+  notebook_execution:
+    in_path: test_notebook.ipynb
+    out_path: test_notebook_output.ipynb
+    parameters:
+      storage_accounts:
+      - storage_account_name: retaildata0
+        container_name: purchases
+        uri: /test/
+      - storage_account_name: patientdata0
+        container_name: personal-information
+        uri: /addresses/employees/
+searcher:
+  name: single
+  metric: x
+  max_length: 1
+entrypoint: python test_notebook_execution.py
+max_restarts: 0
+resources:
+  slots_per_trial: 0
+  
