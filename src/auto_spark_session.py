@@ -150,12 +150,8 @@ class ServicePrincipal:
         return cls
 
     @classmethod
-    def from_secret(cls, key: str) -> "ServicePrincipal":
-        def parse_secret() -> Dict[str, str]:
-            pass
-
-        raise NotImplementedError("IMPL ME")
-        return cls(**parse_secret())
+    def from_secret(cls) -> "ServicePrincipal":
+        return cls.from_file("kubernetes")
 
     @classmethod
     def from_workspace(cls) -> "ServicePrincipal":
@@ -205,7 +201,13 @@ def get_session(
     if det.get_cluster_info() is None:
         raise RuntimeError("must be run on a Determined Cluster")
 
-    service_principal = ServicePrincipal.from_workspace()
+
+    service_principal = None
+    try: 
+        service_principal = ServicePrincipal.from_secret()
+
+    except FileNotFoundError:
+        service_principal = ServicePrincipal.from_workspace()
 
     if conf is None:
         conf = SparkConf()
