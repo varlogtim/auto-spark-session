@@ -1,15 +1,18 @@
 CONTAINER_TAG := spark3.5-rapids1.12-azure3.4-auto-spark
-VERSION := $(shell cat VERSION)
+VERSION := $(shell python setup.py --version 2>/dev/null)
+FULLNAME := $(shell python setup.py --fullname 2>/dev/null)
+DOCKER_REPO ?= varlogtim
+DOCKER_IMAGE ?= pyspark-training
+BASE_IMAGE ?= nolanc/pyspark-nb:spark3.5-rapids1.12-azure3.4
 
 .PHONY: build
 build:
 	python -m build
 
 
-# TODO: detect the version automatically
 .PHONY: install
 install:
-	pip install --force-reinstall dist/auto_spark_session-0.0.1-py3-none-any.whl
+	pip install --force-reinstall dist/$(FULLNAME)-py3-none-any.whl
 
 
 .PHONY: test
@@ -26,10 +29,12 @@ test-multiple: build
 docker: build
 	docker buildx build -f docker/Dockerfile \
 		--platform linux/amd64 \
-		-t varlogtim/pyspark-training:$(CONTAINER_TAG)-auto-spark$(VERSION) \
+        --build-arg BASE_IMAGE=$(BASE_IMAGE) \
+        --build-arg WHL_FILE=$(FULLNAME)-py3-none-any.whl \
+		-t $(DOCKER_REPO)/$(DOCKER_IMAGE):$(CONTAINER_TAG)-auto-spark$(VERSION) \
 		.
 
 .PHONY: docker-push
 docker-push: docker
-	docker push varlogtim/pyspark-training:$(CONTAINER_TAG)-auto-spark$(VERSION)
+	docker push $(DOCKER_REPO)/$(DOCKER_IMAGE):$(CONTAINER_TAG)-auto-spark$(VERSION)
 
