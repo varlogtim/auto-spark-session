@@ -30,6 +30,7 @@ docker: build
 	docker buildx build -f docker/Dockerfile \
 		--platform linux/amd64 \
         --build-arg BASE_IMAGE=$(BASE_IMAGE) \
+        --build-arg WHL_FILE=$(FULLNAME)-py3-none-any.whl \
 		-t $(DOCKER_REPO)/$(DOCKER_IMAGE):$(CONTAINER_TAG)-auto-spark$(VERSION) \
 		.
 

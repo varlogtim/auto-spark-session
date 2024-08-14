@@ -1,8 +1,9 @@
 [project]
 name = "auto_spark_session"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Tim Tucker", email="varlogtim@gmail.com"},
+  { name="Nolan Chan", email="channolanp@gmail.com"},
 ]
 description = "Easily create a spark session"
 readme = "README.md"
